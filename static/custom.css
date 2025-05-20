@@ -1,0 +1,26 @@
+.stButton > button {
+    border: none;
+    background-color: transparent;
+    box-shadow: none;
+    padding: 0.4em 0.8em;
+    font-size: 20px;
+    font-weight: bold;
+    color: #333;
+    text-decoration: underline;
+    text-align: left;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    justify-content: flex-start;
+}
+
+.stButton > button:hover {
+    background-color: #fff;
+    cursor: pointer;
+}
+
+.css-1d391kg {
+    background-color: #f9f9f9;
+}
