@@ -28,3 +28,12 @@ def show():
         
         </ol>
         """)
+    
+    st.markdown("---")
+    st.markdown("### ⚙️ Tool Features")
+    cols = st.columns(3)
+    cols[0].success("✔️ Multi-label Detection")
+    cols[1].info("📂 DICOM Support")
+    cols[2].warning("📈 Visual AI Insights")
+
+
