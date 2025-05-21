@@ -18,3 +18,13 @@ def show():
                     <hr style="border: 1px solid #ccc; margin-top: 1.5em;" />
                 </div>
     """)
+    st.markdown("## 🩺 How to Use This Tool: ")
+    st.html("""
+        <ol style="text-align: left; font-size: 20px;">
+        
+        <li><strong>Upload a patient's CT scan</strong></li>
+        <li><strong>Run the AI model</strong></li>
+        <li><strong>Download report for documentation</strong></li>
+        
+        </ol>
+        """)
