@@ -1,4 +1,4 @@
-
+import shutil
 import os
 import pydicom
 import pandas as pd
@@ -9,6 +9,12 @@ from PIL import Image
 from io import BytesIO
 
 from utils.config import IMG_DIR, UPLOAD_DIR
+
+
+def remove_dir_if_exists(path):
+    if os.path.exists(path):
+        shutil.rmtree(path)
+
 
 #---------------- Meta Extractor --------------#
 def generate_df(base, files):
