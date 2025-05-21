@@ -13,8 +13,8 @@ def render_sidebar():
         if st.button(" Diagnosis"):
             st.session_state.page_selector = "Diagnosis"
             st.rerun()
-        if st.button(" Report"):
-            st.session_state.page_selector = "Report"
+        if st.button(" Brain Anatoym"):
+            st.session_state.page_selector = "Brain Anatoym"
             st.rerun()
         if st.button(" About"):
             st.session_state.page_selector = "About"
