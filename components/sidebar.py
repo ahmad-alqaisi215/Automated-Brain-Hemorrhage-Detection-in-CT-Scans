@@ -2,6 +2,7 @@ import streamlit as st
 
 def render_sidebar():
     with st.sidebar:
+        st.markdown("<div class='navbar'>", unsafe_allow_html=True)
         st.markdown("# Navigation")
 
         if st.button(" Home"):
@@ -19,3 +20,4 @@ def render_sidebar():
         if st.button(" About"):
             st.session_state.page_selector = "About"
             st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
