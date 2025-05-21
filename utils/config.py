@@ -12,3 +12,4 @@ STD_IMG = [0.32451536, 0.2956294,  0.31335256]
 ORIG_IMG_SIZE = 512
 TMP_DIR = 'tmp'
 UPLOAD_DIR = os.path.join(TMP_DIR, 'uploads')
+IMG_DIR = os.path.join(TMP_DIR, 'image')
