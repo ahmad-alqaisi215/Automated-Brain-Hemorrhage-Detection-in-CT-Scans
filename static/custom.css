@@ -1,4 +1,5 @@
-.stButton > button {
+section[data-testid="stSidebar"] .stButton > button,
+section[data-testid="stSidebar"] .stButton > button:active {
     border: none;
     background-color: transparent;
     box-shadow: none;
@@ -16,7 +17,8 @@
     justify-content: flex-start;
 }
 
-.stButton > button:hover {
+section[data-testid="stSidebar"] .stButton > button:focus,
+section[data-testid="stSidebar"] .stButton > button:hover {
     background-color: #fff;
     cursor: pointer;
 }
