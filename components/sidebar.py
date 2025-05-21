@@ -8,7 +8,7 @@ def render_sidebar():
             st.session_state.page_selector = "Home"
             st.rerun()
         if st.button(" Brain Anatomy"):
-            st.session_state.page_selector = "Brain Anatoym"
+            st.session_state.page_selector = "Brain Anatomy"
             st.rerun()
         if st.button(" DCM Viewer"):
             st.session_state.page_selector = "DCM Viewer"
