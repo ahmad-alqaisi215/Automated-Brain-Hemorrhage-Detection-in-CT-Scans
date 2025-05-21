@@ -4,17 +4,7 @@ import numpy as np
 import base64
 from PIL import Image
 from io import BytesIO
-
-def rescale_image(image, slope, intercept):
-    return image * slope + intercept
-
-def apply_window(image, center, width):
-    image = image.copy()
-    min_value = center - width // 2
-    max_value = center + width // 2
-    image[image < min_value] = min_value
-    image[image > max_value] = max_value
-    return image
+from utils.data_pre_proc import rescale_image, apply_window
 
 
 def convert_img_to_base64(img):
@@ -56,35 +46,11 @@ def show():
                 if "WW" not in st.session_state:
                     st.session_state.WW = 80
                 
-               # Custom button style + JS trigger
-                st.html("""
-                            <style>
-                            .reset-button {
-                            background-color: #222;
-                            color: white;
-                            padding: 0.5rem 1.5rem;
-                            border: none;
-                            border-radius: 5px;
-                            font-size: 16px;
-                            cursor: pointer;
-                            transition: 0.3s ease;
-                            margin-top: 10px;
-                            }
-                            .reset-button:hover {
-                                background-color: #444;
-                            }
-                            </style>
-
-                            <button class="reset-button" onclick="fetch(window.location.href + '?reset=true')">🔄 Reset to Brain Window</button>
-                            """)
-
-
-                query_params = st.query_params
-                if "reset" in query_params:
-                    st.session_state.WC = 40
-                    st.session_state.WW = 80
-                    st.experimental_set_query_params()  # This part is still valid
-                    st.rerun()
+                col1, col2 = st.columns([1, 1])
+                with col1:
+                    if st.button("🔄 Reset to Brain Window"):
+                        st.session_state.WC = 40
+                        st.session_state.WW = 80
                     
                         
                 st.html('<div class="centered-controls">')

@@ -98,3 +98,4 @@ def convert_dicom_to_jpg(name, rescaledict):
     image -= image.min((0,1))
     image = (255*image).astype(np.uint8)
     cv2.imwrite(os.path.join(IMG_DIR, imgnm)+'.jpg', image)
+
