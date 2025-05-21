@@ -4,6 +4,9 @@ import pydicom
 import pandas as pd
 import cv2
 import numpy as np
+import base64
+from PIL import Image
+from io import BytesIO
 
 from utils.config import IMG_DIR, UPLOAD_DIR
 
@@ -99,3 +102,9 @@ def convert_dicom_to_jpg(name, rescaledict):
     image = (255*image).astype(np.uint8)
     cv2.imwrite(os.path.join(IMG_DIR, imgnm)+'.jpg', image)
 
+def convert_img_to_base64(img):
+    buffered = BytesIO()
+    Image.fromarray(img).save(buffered, format="PNG")
+    img_bytes = buffered.getvalue()
+    base64_img = base64.b64encode(img_bytes).decode()
+    return base64_img

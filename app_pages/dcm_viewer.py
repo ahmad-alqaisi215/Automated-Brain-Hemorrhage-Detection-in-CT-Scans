@@ -1,18 +1,8 @@
 import streamlit as st
 import pydicom
 import numpy as np
-import base64
-from PIL import Image
-from io import BytesIO
-from utils.data_pre_proc import rescale_image, apply_window
+from utils.data_pre_proc import rescale_image, apply_window, convert_img_to_base64
 
-
-def convert_img_to_base64(img):
-    buffered = BytesIO()
-    Image.fromarray(img).save(buffered, format="PNG")
-    img_bytes = buffered.getvalue()
-    base64_img = base64.b64encode(img_bytes).decode()
-    return base64_img
 
 def show():
     st.title("🖥️ DCM Viewer")
