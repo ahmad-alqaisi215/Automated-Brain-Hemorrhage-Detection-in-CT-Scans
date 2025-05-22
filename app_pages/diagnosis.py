@@ -5,9 +5,10 @@ import torch
 import pandas as pd
 import numpy as np
 import gc
+import cv2
 from utils.config import UPLOAD_DIR, IMG_DIR, DEVICE, BATCH_SIZE
 from utils.data_pre_proc import generate_df, convert_dicom_to_jpg, IntracranialDataset, get_img_transformer
-from utils.model_builder import get_feature_extractor, get_data_loader
+from utils.model_builder import get_feature_extractor, get_data_loader, GradCAM
 
 
 def show():
@@ -81,4 +82,31 @@ def show():
         gc.collect()
         st.success(f"{len(ichdataset)} CT Slice(s) Embeddings Extracted!")
         st.session_state.embeddings_extracted = True
+
+        gradcam = GradCAM(model, target_layer=model.module.layer4[-1])
+
+        for i, batch in enumerate(loader):
+            inputs = batch["image"].to(DEVICE)
+
+            for j in range(inputs.shape[0]):
+                input_tensor = inputs[j].unsqueeze(0)
+                cam, softmax_probs = gradcam.generate(input_tensor)
+
+                img = input_tensor.squeeze().detach().cpu().numpy()
+                img = np.transpose(img, (1, 2, 0))
+        
+                img = (img - img.min()) / (img.max() - img.min() + 1e-6)
+                img = np.uint8(255 * img)
+        
+                heatmap = cv2.applyColorMap(np.uint8(255 * cam), cv2.COLORMAP_JET)
+                heatmap = cv2.cvtColor(heatmap, cv2.COLOR_BGR2RGB)
+        
+                overlay = cv2.addWeighted(img, 0.5, heatmap, 0.5, 0)
+        
+                out_path = os.path.join(UPLOAD_DIR, f"gradcam_{i}_{j}.png")
+                cv2.imwrite(out_path, cv2.cvtColor(overlay, cv2.COLOR_RGB2BGR))
+        
+        
+        
+
 
