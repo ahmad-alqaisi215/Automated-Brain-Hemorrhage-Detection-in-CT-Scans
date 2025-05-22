@@ -30,7 +30,6 @@ elif page == "DCM Viewer":
     from app_pages.dcm_viewer import show
 
 elif page == "Diagnosis":
-    remove_dir_if_exists(TMP_DIR)
     from app_pages.diagnosis import show
 
 elif page == "Brain Anatomy":
