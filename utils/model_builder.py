@@ -3,6 +3,49 @@ import os
 
 from utils.config import DEVICE, N_CLASSES, FEATURE_EXTRACTOR_PTH, MODELS_DIR, N_GPU, BATCH_SIZE
 from torch.utils.data import DataLoader
+import torch.nn.functional as F
+
+
+class GradCAM:
+    def __init__(self, model, target_layer):
+        self.model = model
+        self.target_layer = target_layer
+        self.gradients = None
+        self.activations = None
+        self._register_hooks()
+
+    def _register_hooks(self):
+        def forward_hook(module, input, output):
+            self.activations = output.detach()
+
+        def backward_hook(module, grad_input, grad_output):
+            self.gradients = grad_output[0].detach()
+
+        self.target_layer.register_forward_hook(forward_hook)
+        self.target_layer.register_full_backward_hook(backward_hook)
+
+    def generate(self, input_tensor, class_idx=None):
+        self.model.eval()
+        input_tensor.requires_grad_()
+
+        output = self.model(input_tensor)
+
+        if class_idx is None:
+            class_idx = output.argmax(dim=1).item()
+
+        self.model.zero_grad()
+        output[0, class_idx].backward()
+
+        weights = self.gradients.mean(dim=(2, 3), keepdim=True)
+        cam = (weights * self.activations).sum(dim=1, keepdim=True)
+        cam = F.relu(cam)
+        cam = F.interpolate(
+            cam, size=input_tensor.shape[2:], mode='bilinear', align_corners=False)
+
+        cam -= cam.min()
+        cam /= (cam.max() + 1e-6)
+
+        return cam.squeeze().cpu().numpy(), output.softmax(dim=1).squeeze().detach().cpu().numpy()
 
 
 def get_feature_extractor(checkpoint_no=0):
@@ -10,11 +53,13 @@ def get_feature_extractor(checkpoint_no=0):
     model.fc = torch.nn.Linear(2048, N_CLASSES)
 
     model.to(DEVICE)
-    model = torch.nn.DataParallel(model, device_ids=list(range(N_GPU)[::-1]), output_device=DEVICE)
+    model = torch.nn.DataParallel(model, device_ids=list(
+        range(N_GPU)[::-1]), output_device=DEVICE)
     for param in model.parameters():
         param.requires_grad = False
 
-    input_model_file = os.path.join(MODELS_DIR, f"model_999_epoch{checkpoint_no}_fold6.bin")
+    input_model_file = os.path.join(
+        MODELS_DIR, f"model_999_epoch{checkpoint_no}_fold6.bin")
     model.load_state_dict(torch.load(input_model_file))
     model.to(DEVICE)
     model.eval()
