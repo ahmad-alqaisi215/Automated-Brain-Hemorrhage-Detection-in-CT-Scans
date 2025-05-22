@@ -22,3 +22,11 @@ N_CLASSES = 6
 
 DEVICE = torch.device('cuda')
 N_GPU = torch.cuda.device_count()
+
+AUTOCROP = True
+BATCH_SIZE = 8
+SIZE = 480
+LABEL_COLS = ['epidural', 'intraparenchymal', 'intraventricular', 'subarachnoid', 'subdural', 'any']
+
+HFLIPVAL =  0.0
+TRANSPOSEVAL = 0.0
