@@ -1,7 +1,8 @@
 import torch
 import os
 
-from utils.config import DEVICE, N_CLASSES, FEATURE_EXTRACTOR_PTH, MODELS_DIR, N_GPU
+from utils.config import DEVICE, N_CLASSES, FEATURE_EXTRACTOR_PTH, MODELS_DIR, N_GPU, BATCH_SIZE
+from torch.utils.data import DataLoader
 
 
 def get_feature_extractor(checkpoint_no=0):
@@ -19,3 +20,7 @@ def get_feature_extractor(checkpoint_no=0):
     model.eval()
 
     return model
+
+
+def get_data_loader(ichdataset):
+    return DataLoader(ichdataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=os.cpu_count())
