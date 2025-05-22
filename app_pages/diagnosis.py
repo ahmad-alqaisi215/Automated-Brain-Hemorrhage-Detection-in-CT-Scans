@@ -1,15 +1,17 @@
 import os
 import streamlit as st
 import time
-from utils.config import UPLOAD_DIR, IMG_DIR
-from utils.data_pre_proc import generate_df, convert_dicom_to_jpg
+import torch
+import pandas as pd
+import numpy as np
+import gc
+from utils.config import UPLOAD_DIR, IMG_DIR, DEVICE, BATCH_SIZE
+from utils.data_pre_proc import generate_df, convert_dicom_to_jpg, IntracranialDataset, get_img_transformer
+from utils.model_builder import get_feature_extractor, get_data_loader
 
 
 def show():
     st.title("📤 Upload CT-Scan")
-
-    if "diagnosis_enabled" not in st.session_state:
-        st.session_state.diagnosis_enabled = False
 
     uploaded_files = st.file_uploader(
         label="📤 Upload One or More **DICOM** Files (Each with a Single CT Slice)",
@@ -33,9 +35,6 @@ def show():
         
         st.success(f"{len(uploaded_files)} file(s) Analyzed!")
 
-        if len(uploaded_files) > 0:
-            st.session_state.diagnosis_enabled = True
-
         slice_prepration = st.progress(0, text=f"Processing CT Slices...")
 
         dcm_files = os.listdir(UPLOAD_DIR)
@@ -56,6 +55,30 @@ def show():
             convert_dicom_to_jpg(name, rescaledict)
             
         st.success(f"{len(uploaded_files)} CT Slice(s) Processed!")
+        ichdataset = IntracranialDataset(
+            df=pd.read_csv(os.path.join(UPLOAD_DIR, 'metadata.csv')),
+            path=IMG_DIR,
+            transform=get_img_transformer(),
+            labels=False
+        )
+        
+        loader = get_data_loader(ichdataset)
+        model = get_feature_extractor()
+        ls = []
+        extract_emb = st.progress(0.0, text="Embedding Extraction...")
 
+        total = len(loader)
+        for i, batch in enumerate(loader, start=1):
+            inputs = batch["image"].to(DEVICE, dtype=torch.float)
+            out = model(inputs)
+            ls.append(out.detach().cpu().numpy())
+            progress = i / total
+            extract_emb.progress(progress, text=f'Embedding Extraction ({min(len(ichdataset), i * BATCH_SIZE)}/{len(ichdataset)})...')
+            
+        outemb = np.concatenate(ls, 0).astype(np.float32)
+        np.savez_compressed(os.path.join(UPLOAD_DIR, 'emb'), outemb)
 
-    st.button("Diagnosis", disabled=not st.session_state.diagnosis_enabled)
+        gc.collect()
+        st.success(f"{len(ichdataset)} CT Slice(s) Embeddings Extracted!")
+        st.session_state.embeddings_extracted = True
+
