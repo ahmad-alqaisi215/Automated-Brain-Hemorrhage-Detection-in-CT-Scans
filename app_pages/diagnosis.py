@@ -1,15 +1,16 @@
 import os
 import streamlit as st
-import time
 import torch
 import pandas as pd
 import numpy as np
 import gc
 import cv2
-from utils.config import UPLOAD_DIR, IMG_DIR, DEVICE, BATCH_SIZE
-from utils.data_pre_proc import generate_df, convert_dicom_to_jpg, IntracranialDataset, get_img_transformer
-from utils.model_builder import get_feature_extractor, get_data_loader, GradCAM
 
+from utils.config import UPLOAD_DIR, IMG_DIR, DEVICE, BATCH_SIZE
+from utils.data_pre_proc import (generate_df, convert_dicom_to_jpg, IntracranialDataset, get_img_transformer, 
+                                 loademb, PatientLevelEmbeddingDataset, collatefn)
+from utils.model_builder import get_feature_extractor, get_data_loader, GradCAM
+from torch.utils.data import DataLoader
 
 def show():
     st.title("📤 Upload CT-Scan")
@@ -91,7 +92,8 @@ def show():
             np.savez_compressed(os.path.join(UPLOAD_DIR, f'emb{i}'), outemb)
             gc.collect()
 
-        extract_emb.progress(1.0, text=f'Embedding Extraction ({len(ichdataset)}/{len(ichdataset)})...')
+        extract_emb.progress(
+            1.0, text=f'Embedding Extraction ({len(ichdataset)}/{len(ichdataset)})...')
 
         st.success(f"{len(ichdataset)} CT Slice(s) Embeddings Extracted!")
 
@@ -118,3 +120,46 @@ def show():
 
                 out_path = os.path.join(UPLOAD_DIR, f"gradcam_{i}_{j}.png")
                 cv2.imwrite(out_path, cv2.cvtColor(overlay, cv2.COLOR_RGB2BGR))
+
+        dcms_df['SliceID'] = dcms_df[['PatientID', 'SeriesInstanceUID', 'StudyInstanceUID']].apply(
+            lambda x: '{}__{}__{}'.format(*x.tolist()), 1)
+        
+        poscols = ['ImagePos{}'.format(i) for i in range(1, 4)]
+        dcms_df[poscols] = pd.DataFrame(dcms_df['ImagePositionPatient']
+                                .apply(lambda x: list(map(float, x))).tolist())
+        
+        dcms_df = dcms_df.sort_values(
+            ['SliceID']+poscols)[['PatientID', 'SliceID', 'SOPInstanceUID']+poscols].reset_index(drop=True)
+        dcms_df['seq'] = (dcms_df.groupby(['SliceID']).cumcount() + 1)
+
+        keepcols = ['PatientID', 'SliceID', 'SOPInstanceUID', 'seq']
+        dcms_df = dcms_df[keepcols]
+
+        dcms_df.columns = dcms_df.columns = ['PatientID', 'SliceID', 'Image', 'seq']
+
+        dcms_df_seq = loader.dataset.data
+        dcms_df_seq['Image'] = dcms_df_seq['SOPInstanceUID']
+        dcms_df_seq['embidx'] = range(dcms_df_seq.shape[0])
+
+        st.success(dcms_df_seq.head())
+        st.success(dcms_df.head())
+
+        dcms_df_seq = dcms_df_seq.merge(dcms_df, on='Image')
+
+        dcms_df_emb = [loademb(0)] # i -> 3
+        dcms_df_emb = sum(dcms_df_emb)/len(dcms_df_emb)
+
+        dcm_seq_dataset = PatientLevelEmbeddingDataset(dcms_df_seq, dcms_df_emb, labels=False)
+        dcm_seq_loader = DataLoader(dcm_seq_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=os.cpu_count(), collate_fn=collatefn)
+
+
+
+
+
+
+
+
+
+
+
+        
