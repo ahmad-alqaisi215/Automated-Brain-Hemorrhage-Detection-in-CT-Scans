@@ -8,7 +8,7 @@ import cv2
 
 from utils.config import UPLOAD_DIR, IMG_DIR, DEVICE, BATCH_SIZE, LSTM_UNITS, SEQ_MODEL_PTH, N_CLASSES, N_GPU, MODELS_DIR, N_BAGS
 from utils.data_pre_proc import (generate_df, convert_dicom_to_jpg, IntracranialDataset, get_img_transformer, 
-                                 loademb, PatientLevelEmbeddingDataset, collatefn, long_to_wide)
+                                 loademb, PatientLevelEmbeddingDataset, collatefn, bagged_diagnosis)
 from utils.model_builder import get_feature_extractor, get_data_loader, GradCAM, SeqModel, predict, make_diagnosis, Identity
 from torch.utils.data import DataLoader
 
@@ -147,9 +147,10 @@ def show():
         dcms_df_seq['embidx'] = range(dcms_df_seq.shape[0])
 
         dcms_df_seq = dcms_df_seq.merge(dcms_df, on='Image')
+        lstmypredls = []
 
         for i in range(total_models):
-            dcms_df_emb = [loademb(i)] # i -> 3
+            dcms_df_emb = [loademb(i)]
             dcms_df_emb = sum(dcms_df_emb)/len(dcms_df_emb)
 
             dcm_seq_dataset = PatientLevelEmbeddingDataset(dcms_df_seq, dcms_df_emb, labels=False)
@@ -178,7 +179,11 @@ def show():
             ypred = sum(ypredls[-N_BAGS:])/len(ypredls[-N_BAGS:])
             yout = make_diagnosis(ypred, imgdcm)
 
-            yout['Label'] = (yout['Label'] > 0.5).astype(int)
-            yout.to_csv(os.path.join(UPLOAD_DIR, f'diagnosis{i}.csv.gz'), index=False, compression='gzip')
+            lstmypredls.append(yout.set_index('ID'))
 
-        st.success(yout)
+        final_diagnosis = bagged_diagnosis(lstmypredls)
+        
+        st.subheader("📋 Final Diagnosis Table")
+        st.dataframe(final_diagnosis)
+
+
