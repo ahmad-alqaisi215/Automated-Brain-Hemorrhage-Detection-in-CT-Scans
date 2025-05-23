@@ -8,7 +8,7 @@ import cv2
 
 from utils.config import UPLOAD_DIR, IMG_DIR, DEVICE, BATCH_SIZE, LSTM_UNITS, SEQ_MODEL_PTH, N_CLASSES, N_GPU, MODELS_DIR, N_BAGS
 from utils.data_pre_proc import (generate_df, convert_dicom_to_jpg, IntracranialDataset, get_img_transformer, 
-                                 loademb, PatientLevelEmbeddingDataset, collatefn)
+                                 loademb, PatientLevelEmbeddingDataset, collatefn, long_to_wide)
 from utils.model_builder import get_feature_extractor, get_data_loader, GradCAM, SeqModel, predict, make_diagnosis, Identity
 from torch.utils.data import DataLoader
 
@@ -67,7 +67,7 @@ def show():
         loader = get_data_loader(ichdataset)
         extract_emb = st.progress(0.0, text="Embedding Extraction...")
 
-        total_models = 1
+        total_models = 3
         step = 0
 
         for i in range(total_models):
@@ -148,37 +148,37 @@ def show():
 
         dcms_df_seq = dcms_df_seq.merge(dcms_df, on='Image')
 
-        dcms_df_emb = [loademb(0)] # i -> 3
-        dcms_df_emb = sum(dcms_df_emb)/len(dcms_df_emb)
+        for i in range(total_models):
+            dcms_df_emb = [loademb(i)] # i -> 3
+            dcms_df_emb = sum(dcms_df_emb)/len(dcms_df_emb)
 
-        dcm_seq_dataset = PatientLevelEmbeddingDataset(dcms_df_seq, dcms_df_emb, labels=False)
-        dcm_seq_loader = DataLoader(dcm_seq_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=os.cpu_count(), collate_fn=collatefn)
+            dcm_seq_dataset = PatientLevelEmbeddingDataset(dcms_df_seq, dcms_df_emb, labels=False)
+            dcm_seq_loader = DataLoader(dcm_seq_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=os.cpu_count(), collate_fn=collatefn)
 
-        st.success(next(iter(dcm_seq_loader))['emb'].shape)
+            model = SeqModel(embed_size=LSTM_UNITS*3, LSTM_UNITS=LSTM_UNITS, DO=0.0)
+            model.to(DEVICE)
 
-        model = SeqModel(embed_size=LSTM_UNITS*3, LSTM_UNITS=LSTM_UNITS, DO=0.0)
-        model.to(DEVICE)
+            # model = torch.nn.DataParallel(model, device_ids=list(
+            #     range(N_GPU)[::-1]), output_device=DEVICE)
+            
+            for param in model.parameters():
+                param.requires_grad = False
 
-        # model = torch.nn.DataParallel(model, device_ids=list(
-        #     range(N_GPU)[::-1]), output_device=DEVICE)
-        
-        for param in model.parameters():
-            param.requires_grad = False
+            input_model_file = os.path.join(
+                MODELS_DIR, f"lstm_gepoch{i}_lstmepoch11_fold6.bin")
+            model.load_state_dict(torch.load(input_model_file))
+            model.to(DEVICE)
+            model.eval()
 
-        input_model_file = os.path.join(
-            MODELS_DIR, f"lstm_gepoch{0}_lstmepoch11_fold6.bin")
-        model.load_state_dict(torch.load(input_model_file))
-        model.to(DEVICE)
-        model.eval()
+            ypredls = []
 
-        ypredls = []
+            ypred, imgdcm = predict(dcm_seq_loader, model)
+            ypredls.append(ypred)
 
-        ypred, imgdcm = predict(dcm_seq_loader, model)
-        ypredls.append(ypred)
+            ypred = sum(ypredls[-N_BAGS:])/len(ypredls[-N_BAGS:])
+            yout = make_diagnosis(ypred, imgdcm)
 
-        ypred = sum(ypredls[-N_BAGS:])/len(ypredls[-N_BAGS:])
-        yout = make_diagnosis(ypred, imgdcm)
-
-        yout.to_csv(os.path.join(UPLOAD_DIR, 'diagnosis.csv.gz'), index=False, compression='gzip')
+            yout['Label'] = (yout['Label'] > 0.5).astype(int)
+            yout.to_csv(os.path.join(UPLOAD_DIR, f'diagnosis{i}.csv.gz'), index=False, compression='gzip')
 
         st.success(yout)
