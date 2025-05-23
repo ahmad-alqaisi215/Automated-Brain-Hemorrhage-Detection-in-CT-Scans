@@ -28,9 +28,8 @@ class PatientLevelEmbeddingDataset:
         return len(self.patients)
 
     def __getitem__(self, idx):
-
         patidx = self.patients[idx]
-        patdf = self.data.loc[patidx].sort_values('seq')
+        patdf = self.data.loc[[patidx]].sort_values(by='seq')
         patemb = self.mat[patdf['embidx'].values]
 
         patdeltalag  = np.zeros(patemb.shape)
