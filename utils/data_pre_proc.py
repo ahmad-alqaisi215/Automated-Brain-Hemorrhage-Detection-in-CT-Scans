@@ -235,3 +235,30 @@ def get_img_transformer():
 
 def loademb(emb_no=0):
     return np.load(os.path.join(UPLOAD_DIR, f'emb{emb_no}.npz'))['arr_0']
+
+
+def collatefn(batch):
+    maxlen = max([l['emb'].shape[0] for l in batch])
+    embdim = batch[0]['emb'].shape[1]
+    withlabel = 'labels' in batch[0]
+    if withlabel:
+        labdim= batch[0]['labels'].shape[1]
+
+    for b in batch:
+        masklen = maxlen-len(b['emb'])
+        b['emb'] = np.vstack((np.zeros((masklen, embdim)), b['emb']))
+        b['embidx'] = torch.cat((torch.ones((masklen),dtype=torch.long)*-1, b['embidx']))
+        b['mask'] = np.ones((maxlen))
+        b['mask'][:masklen] = 0.
+        if withlabel:
+            b['labels'] = np.vstack((np.zeros((maxlen-len(b['labels']), labdim)), b['labels']))
+
+    outbatch = {'emb' : torch.tensor(np.vstack([np.expand_dims(b['emb'], 0) \
+                                                for b in batch])).float()}
+    outbatch['mask'] = torch.tensor(np.vstack([np.expand_dims(b['mask'], 0) \
+                                                for b in batch])).float()
+    outbatch['embidx'] = torch.tensor(np.vstack([np.expand_dims(b['embidx'], 0) \
+                                                for b in batch])).float()
+    if withlabel:
+        outbatch['labels'] = torch.tensor(np.vstack([np.expand_dims(b['labels'], 0) for b in batch])).float()
+    return outbatch
