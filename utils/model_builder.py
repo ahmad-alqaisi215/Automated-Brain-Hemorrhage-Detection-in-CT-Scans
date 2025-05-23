@@ -9,6 +9,14 @@ from torch.utils.data import DataLoader
 from utils.config import DEVICE, N_CLASSES, FEATURE_EXTRACTOR_PTH, MODELS_DIR, N_GPU, BATCH_SIZE, LABEL_COLS
 
 
+class Identity(nn.Module):
+    def __init__(self):
+        super(Identity, self).__init__()
+        
+    def forward(self, x):
+        return x
+
+
 class SpatialDropout(nn.Dropout2d):
     def forward(self, x):
         x = x.unsqueeze(2)
@@ -120,7 +128,7 @@ def get_data_loader(ichdataset):
 
 
 def make_diagnosis(ypred, imgs):
-    imgls = np.array(imgs).repeat(len())
+    imgls = np.array(imgs).repeat(len(ypred))
     icdls = pd.Series(LABEL_COLS * ypred.shape[0])
     yidx = ['{}_{}'.format(i,j) for i,j in zip(imgls, icdls)]
     subdf = pd.DataFrame({'ID' : yidx, 'Label': ypred.flatten()})
