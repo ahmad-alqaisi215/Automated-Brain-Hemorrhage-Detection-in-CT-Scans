@@ -275,3 +275,13 @@ def long_to_wide(df):
     df_copy = df_copy.pivot(index="ID", columns="Type", values="Label")
 
     return df_copy
+
+
+def bagged_diagnosis(seqpredsls, wide_format=True):
+    ylstmpred = sum(seqpredsls)/len(seqpredsls)
+    ylstmpred = ylstmpred.clip(0.00001, 0.99999)
+
+    if wide_format:
+        return long_to_wide(ylstmpred.reset_index())
+    
+    return ylstmpred.reset_index()
