@@ -231,3 +231,7 @@ def get_img_transformer():
         Normalize(mean=MEAN_IMG, std=STD_IMG, max_pixel_value=255.0, p=1.0),
         ToTensorV2()
     ])
+
+
+def loademb(emb_no=0):
+    return np.load(os.path.join(UPLOAD_DIR, f'emb{emb_no}.npz'))['arr_0']
