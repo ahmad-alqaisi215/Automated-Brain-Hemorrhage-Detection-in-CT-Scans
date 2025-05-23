@@ -6,10 +6,10 @@ import numpy as np
 import gc
 import cv2
 
-from utils.config import UPLOAD_DIR, IMG_DIR, DEVICE, BATCH_SIZE
+from utils.config import UPLOAD_DIR, IMG_DIR, DEVICE, BATCH_SIZE, LSTM_UNITS, SEQ_MODEL_PTH, N_CLASSES, N_GPU, MODELS_DIR
 from utils.data_pre_proc import (generate_df, convert_dicom_to_jpg, IntracranialDataset, get_img_transformer, 
                                  loademb, PatientLevelEmbeddingDataset, collatefn)
-from utils.model_builder import get_feature_extractor, get_data_loader, GradCAM
+from utils.model_builder import get_feature_extractor, get_data_loader, GradCAM, SeqModel
 from torch.utils.data import DataLoader
 
 def show():
@@ -67,7 +67,7 @@ def show():
         loader = get_data_loader(ichdataset)
         extract_emb = st.progress(0.0, text="Embedding Extraction...")
 
-        total_models = 3
+        total_models = 1
         step = 0
 
         for i in range(total_models):
@@ -151,6 +151,23 @@ def show():
 
         dcm_seq_dataset = PatientLevelEmbeddingDataset(dcms_df_seq, dcms_df_emb, labels=False)
         dcm_seq_loader = DataLoader(dcm_seq_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=os.cpu_count(), collate_fn=collatefn)
+
+        model = SeqModel(embed_size=LSTM_UNITS*3, LSTM_UNITS=LSTM_UNITS, DO=0.0)
+        model.to(DEVICE)
+
+        # model = torch.nn.DataParallel(model, device_ids=list(
+        #     range(N_GPU)[::-1]), output_device=DEVICE)
+        
+        for param in model.parameters():
+            param.requires_grad = False
+
+        input_model_file = os.path.join(
+            MODELS_DIR, f"lstm_gepoch{0}_lstmepoch11_fold6.bin")
+        model.load_state_dict(torch.load(input_model_file))
+        model.to(DEVICE)
+        model.eval()
+
+        st.success(model)
 
 
 
