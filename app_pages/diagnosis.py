@@ -20,7 +20,7 @@ def show():
         accept_multiple_files=True,
         key="single",
         help="You can upload multiple .dcm files, but each file must represent a single-slice CT scan. Multi-frame DICOMs are not supported yet."
-        )
+    )
 
     if uploaded_files:
         st.success(f"{len(uploaded_files)} file(s) uploaded!")
@@ -33,7 +33,7 @@ def show():
 
             meta_progress.progress(
                 (i + 1)/len(uploaded_files), text=f'Files Analysis ({i + 1}/{len(uploaded_files)})...')
-        
+
         st.success(f"{len(uploaded_files)} file(s) Analyzed!")
 
         slice_prepration = st.progress(0, text=f"Processing CT Slices...")
@@ -54,7 +54,7 @@ def show():
             )
 
             convert_dicom_to_jpg(name, rescaledict)
-            
+
         st.success(f"{len(uploaded_files)} CT Slice(s) Processed!")
         ichdataset = IntracranialDataset(
             df=pd.read_csv(os.path.join(UPLOAD_DIR, 'metadata.csv')),
@@ -62,26 +62,38 @@ def show():
             transform=get_img_transformer(),
             labels=False
         )
-        
+
         loader = get_data_loader(ichdataset)
-        model = get_feature_extractor()
-        ls = []
         extract_emb = st.progress(0.0, text="Embedding Extraction...")
 
-        total = len(loader)
-        for i, batch in enumerate(loader, start=1):
-            inputs = batch["image"].to(DEVICE, dtype=torch.float)
-            out = model(inputs)
-            ls.append(out.detach().cpu().numpy())
-            progress = i / total
-            extract_emb.progress(progress, text=f'Embedding Extraction ({min(len(ichdataset), i * BATCH_SIZE)}/{len(ichdataset)})...')
-            
-        outemb = np.concatenate(ls, 0).astype(np.float32)
-        np.savez_compressed(os.path.join(UPLOAD_DIR, 'emb'), outemb)
+        total_models = 3
+        step = 0
 
-        gc.collect()
+        for i in range(total_models):
+            model = get_feature_extractor(i)
+            ls = []
+
+            for j, batch in enumerate(loader):
+                inputs = batch["image"].to(DEVICE, dtype=torch.float)
+                out = model(inputs)
+                ls.append(out.detach().cpu().numpy())
+
+                if j % total_models == 0:
+                    step += BATCH_SIZE
+                    progress = step / len(ichdataset)
+
+                extract_emb.progress(
+                    min(progress, 1.0),
+                    text=f'Embedding Extraction ({min(step, len(ichdataset))}/{len(ichdataset)})...'
+                )
+
+            outemb = np.concatenate(ls, 0).astype(np.float32)
+            np.savez_compressed(os.path.join(UPLOAD_DIR, f'emb{i}'), outemb)
+            gc.collect()
+
+        extract_emb.progress(1.0, text=f'Embedding Extraction ({len(ichdataset)}/{len(ichdataset)})...')
+
         st.success(f"{len(ichdataset)} CT Slice(s) Embeddings Extracted!")
-        st.session_state.embeddings_extracted = True
 
         gradcam = GradCAM(model, target_layer=model.module.layer4[-1])
 
@@ -90,23 +102,19 @@ def show():
 
             for j in range(inputs.shape[0]):
                 input_tensor = inputs[j].unsqueeze(0)
-                cam, softmax_probs = gradcam.generate(input_tensor)
+                cam, _ = gradcam.generate(input_tensor)
 
                 img = input_tensor.squeeze().detach().cpu().numpy()
                 img = np.transpose(img, (1, 2, 0))
-        
+
                 img = (img - img.min()) / (img.max() - img.min() + 1e-6)
                 img = np.uint8(255 * img)
-        
-                heatmap = cv2.applyColorMap(np.uint8(255 * cam), cv2.COLORMAP_JET)
+
+                heatmap = cv2.applyColorMap(
+                    np.uint8(255 * cam), cv2.COLORMAP_JET)
                 heatmap = cv2.cvtColor(heatmap, cv2.COLOR_BGR2RGB)
-        
+
                 overlay = cv2.addWeighted(img, 0.5, heatmap, 0.5, 0)
-        
+
                 out_path = os.path.join(UPLOAD_DIR, f"gradcam_{i}_{j}.png")
                 cv2.imwrite(out_path, cv2.cvtColor(overlay, cv2.COLOR_RGB2BGR))
-        
-        
-        
-
-
