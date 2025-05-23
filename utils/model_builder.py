@@ -1,9 +1,11 @@
-import torch
 import os
-
-from utils.config import DEVICE, N_CLASSES, FEATURE_EXTRACTOR_PTH, MODELS_DIR, N_GPU, BATCH_SIZE
-from torch.utils.data import DataLoader
+import torch
+import numpy as np
+import pandas as pd
 import torch.nn.functional as F
+
+from utils.config import DEVICE, N_CLASSES, FEATURE_EXTRACTOR_PTH, MODELS_DIR, N_GPU, BATCH_SIZE, LABEL_COLS
+from torch.utils.data import DataLoader
 
 
 class GradCAM:
@@ -69,3 +71,11 @@ def get_feature_extractor(checkpoint_no=0):
 
 def get_data_loader(ichdataset):
     return DataLoader(ichdataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=os.cpu_count())
+
+
+def make_diagnosis(ypred, imgs):
+    imgls = np.array(imgs).repeat(len())
+    icdls = pd.Series(LABEL_COLS * ypred.shape[0])
+    yidx = ['{}_{}'.format(i,j) for i,j in zip(imgls, icdls)]
+    subdf = pd.DataFrame({'ID' : yidx, 'Label': ypred.flatten()})
+    return subdf
