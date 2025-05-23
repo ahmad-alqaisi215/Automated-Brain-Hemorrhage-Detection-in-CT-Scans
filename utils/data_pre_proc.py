@@ -32,9 +32,9 @@ class PatientLevelEmbeddingDataset:
         patdf = self.data.loc[[patidx]].sort_values(by='seq')
         patemb = self.mat[patdf['embidx'].values]
 
-        patdeltalag  = np.zeros(patemb.shape)
+        patdeltalag = np.zeros(patemb.shape)
         patdeltalead = np.zeros(patemb.shape)
-        patdeltalag [1:] = patemb[1:]-patemb[:-1]
+        patdeltalag[1:] = patemb[1:]-patemb[:-1]
         patdeltalead[:-1] = patemb[:-1]-patemb[1:]
 
         patemb = np.concatenate((patemb, patdeltalag, patdeltalead), -1)
@@ -43,9 +43,9 @@ class PatientLevelEmbeddingDataset:
 
         if self.labels:
             labels = torch.tensor(patdf[LABEL_COLS].values)
-            return {'emb': patemb, 'embidx' : ids, 'labels': labels}
+            return {'emb': patemb, 'embidx': ids, 'labels': labels}
         else:
-            return {'emb': patemb, 'embidx' : ids}
+            return {'emb': patemb, 'embidx': ids}
 
 
 class IntracranialDataset(Dataset):
@@ -241,23 +241,37 @@ def collatefn(batch):
     embdim = batch[0]['emb'].shape[1]
     withlabel = 'labels' in batch[0]
     if withlabel:
-        labdim= batch[0]['labels'].shape[1]
+        labdim = batch[0]['labels'].shape[1]
 
     for b in batch:
         masklen = maxlen-len(b['emb'])
         b['emb'] = np.vstack((np.zeros((masklen, embdim)), b['emb']))
-        b['embidx'] = torch.cat((torch.ones((masklen),dtype=torch.long)*-1, b['embidx']))
+        b['embidx'] = torch.cat(
+            (torch.ones((masklen), dtype=torch.long)*-1, b['embidx']))
         b['mask'] = np.ones((maxlen))
         b['mask'][:masklen] = 0.
         if withlabel:
-            b['labels'] = np.vstack((np.zeros((maxlen-len(b['labels']), labdim)), b['labels']))
+            b['labels'] = np.vstack(
+                (np.zeros((maxlen-len(b['labels']), labdim)), b['labels']))
 
-    outbatch = {'emb' : torch.tensor(np.vstack([np.expand_dims(b['emb'], 0) \
-                                                for b in batch])).float()}
-    outbatch['mask'] = torch.tensor(np.vstack([np.expand_dims(b['mask'], 0) \
-                                                for b in batch])).float()
-    outbatch['embidx'] = torch.tensor(np.vstack([np.expand_dims(b['embidx'], 0) \
+    outbatch = {'emb': torch.tensor(np.vstack([np.expand_dims(b['emb'], 0)
+                                               for b in batch])).float()}
+    outbatch['mask'] = torch.tensor(np.vstack([np.expand_dims(b['mask'], 0)
+                                               for b in batch])).float()
+    outbatch['embidx'] = torch.tensor(np.vstack([np.expand_dims(b['embidx'], 0)
                                                 for b in batch])).float()
     if withlabel:
-        outbatch['labels'] = torch.tensor(np.vstack([np.expand_dims(b['labels'], 0) for b in batch])).float()
+        outbatch['labels'] = torch.tensor(
+            np.vstack([np.expand_dims(b['labels'], 0) for b in batch])).float()
     return outbatch
+
+
+def long_to_wide(df):
+    df_copy = df.copy()
+
+    _ = df_copy.ID.str.split(r'(ID_[a-z|A-Z|0-9]+)_', expand=True)
+    df_copy['ID'] = _.iloc[:, 1]
+    df_copy['Type'] = _.iloc[:, 2]
+    df_copy = df_copy.pivot(index="ID", columns="Type", values="Label")
+
+    return df_copy
