@@ -128,7 +128,7 @@ def get_data_loader(ichdataset):
 
 
 def make_diagnosis(ypred, imgs):
-    imgls = np.array(imgs).repeat(len(N_CLASSES))
+    imgls = np.array(imgs).repeat(N_CLASSES)
     icdls = pd.Series(LABEL_COLS * ypred.shape[0])
     yidx = ['{}_{}'.format(i,j) for i,j in zip(imgls, icdls)]
     subdf = pd.DataFrame({'ID' : yidx, 'Label': ypred.flatten()})
