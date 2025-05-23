@@ -6,10 +6,10 @@ import numpy as np
 import gc
 import cv2
 
-from utils.config import UPLOAD_DIR, IMG_DIR, DEVICE, BATCH_SIZE, LSTM_UNITS, SEQ_MODEL_PTH, N_CLASSES, N_GPU, MODELS_DIR
+from utils.config import UPLOAD_DIR, IMG_DIR, DEVICE, BATCH_SIZE, LSTM_UNITS, SEQ_MODEL_PTH, N_CLASSES, N_GPU, MODELS_DIR, N_BAGS
 from utils.data_pre_proc import (generate_df, convert_dicom_to_jpg, IntracranialDataset, get_img_transformer, 
                                  loademb, PatientLevelEmbeddingDataset, collatefn)
-from utils.model_builder import get_feature_extractor, get_data_loader, GradCAM, SeqModel
+from utils.model_builder import get_feature_extractor, get_data_loader, GradCAM, SeqModel, predict, make_diagnosis, Identity
 from torch.utils.data import DataLoader
 
 def show():
@@ -72,6 +72,10 @@ def show():
 
         for i in range(total_models):
             model = get_feature_extractor(i)
+
+            model.module.fc = Identity()
+            model.eval()
+
             ls = []
 
             for j, batch in enumerate(loader):
@@ -97,6 +101,7 @@ def show():
 
         st.success(f"{len(ichdataset)} CT Slice(s) Embeddings Extracted!")
 
+        model = get_feature_extractor()
         gradcam = GradCAM(model, target_layer=model.module.layer4[-1])
 
         for i, batch in enumerate(loader):
@@ -141,9 +146,6 @@ def show():
         dcms_df_seq['Image'] = dcms_df_seq['SOPInstanceUID']
         dcms_df_seq['embidx'] = range(dcms_df_seq.shape[0])
 
-        st.success(dcms_df_seq.head())
-        st.success(dcms_df.head())
-
         dcms_df_seq = dcms_df_seq.merge(dcms_df, on='Image')
 
         dcms_df_emb = [loademb(0)] # i -> 3
@@ -151,6 +153,8 @@ def show():
 
         dcm_seq_dataset = PatientLevelEmbeddingDataset(dcms_df_seq, dcms_df_emb, labels=False)
         dcm_seq_loader = DataLoader(dcm_seq_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=os.cpu_count(), collate_fn=collatefn)
+
+        st.success(next(iter(dcm_seq_loader))['emb'].shape)
 
         model = SeqModel(embed_size=LSTM_UNITS*3, LSTM_UNITS=LSTM_UNITS, DO=0.0)
         model.to(DEVICE)
@@ -167,16 +171,14 @@ def show():
         model.to(DEVICE)
         model.eval()
 
-        st.success(model)
+        ypredls = []
 
+        ypred, imgdcm = predict(dcm_seq_loader, model)
+        ypredls.append(ypred)
 
+        ypred = sum(ypredls[-N_BAGS:])/len(ypredls[-N_BAGS:])
+        yout = make_diagnosis(ypred, imgdcm)
 
+        yout.to_csv(os.path.join(UPLOAD_DIR, 'diagnosis.csv.gz'), index=False, compression='gzip')
 
-
-
-
-
-
-
-
-        
+        st.success(yout)
