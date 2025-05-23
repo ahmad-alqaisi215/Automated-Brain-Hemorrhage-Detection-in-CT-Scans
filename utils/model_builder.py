@@ -4,8 +4,54 @@ import numpy as np
 import pandas as pd
 import torch.nn.functional as F
 
-from utils.config import DEVICE, N_CLASSES, FEATURE_EXTRACTOR_PTH, MODELS_DIR, N_GPU, BATCH_SIZE, LABEL_COLS
+from torch import nn
 from torch.utils.data import DataLoader
+from utils.config import DEVICE, N_CLASSES, FEATURE_EXTRACTOR_PTH, MODELS_DIR, N_GPU, BATCH_SIZE, LABEL_COLS
+
+
+class SpatialDropout(nn.Dropout2d):
+    def forward(self, x):
+        x = x.unsqueeze(2)
+        x = x.permute(0, 3, 2, 1)
+        x = super(SpatialDropout, self).forward(x)
+        x = x.permute(0, 3, 2, 1)
+        x = x.squeeze(2)
+        return x
+
+
+class SeqModel(nn.Module):
+    def __init__(self, embed_size, LSTM_UNITS=64, DO = 0.3):
+        super(SeqModel, self).__init__()
+
+        self.embedding_dropout = SpatialDropout(0.0)
+
+        self.lstm1 = nn.LSTM(embed_size, LSTM_UNITS, bidirectional=True, batch_first=True)
+        self.lstm2 = nn.LSTM(LSTM_UNITS * 2, LSTM_UNITS, bidirectional=True, batch_first=True)
+
+        self.linear1 = nn.Linear(LSTM_UNITS*2, LSTM_UNITS*2)
+        self.linear2 = nn.Linear(LSTM_UNITS*2, LSTM_UNITS*2)
+
+        self.linear = nn.Linear(LSTM_UNITS*2, len(LABEL_COLS))
+
+    def forward(self, x, lengths=None):
+        h_embedding = x
+
+        h_embadd = torch.cat((h_embedding[:,:,:2048], h_embedding[:,:,:2048]), -1)
+
+        h_lstm1, _ = self.lstm1(h_embedding)
+        h_lstm1 = h_lstm1.to(dtype=torch.float32)
+        h_lstm2, _ = self.lstm2(h_lstm1)
+        h_lstm2 = h_lstm2.to(dtype=torch.float32)
+
+        h_conc_linear1  = F.relu(self.linear1(h_lstm1))
+
+        h_conc_linear2  = F.relu(self.linear2(h_lstm2))
+
+        hidden = h_lstm1 + h_lstm2 + h_conc_linear1 + h_conc_linear2 + h_embadd
+
+        output = self.linear(hidden)
+
+        return output
 
 
 class GradCAM:
