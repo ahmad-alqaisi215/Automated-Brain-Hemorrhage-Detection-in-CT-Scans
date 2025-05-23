@@ -4,6 +4,34 @@ from pathlib import Path
 
 def show():
     st.title("🧠 Brain Anatomy")
+    st.html("""
+        <style>
+        .ich-card {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        .ich-card img {
+            width: 100px;
+            height: 100px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 2px solid #ccc;
+        }
+        .ich-card h4 {
+            margin-bottom: 5px;
+        }
+        .ich-card p {
+            margin: 0;
+            font-size: 15px;
+            color: #333;
+        }
+        </style>
+    """)
     glb_url = 'https://raw.githubusercontent.com/AMQ4/Automated-Brain-Hemorrhage-Detection-in-CT-Scans/main/human-brain.glb'
 
 
@@ -35,18 +63,71 @@ def show():
     col1, col2 = st.columns(2)
 
     with col1:
-        st.success("**1. Epidural Hemorrhage (EDH)**\n\nBleeding between the skull and dura mater. Often caused by trauma.")
-        st.warning("**2. Subdural Hemorrhage (SDH)**\n\nOccurs between the dura and arachnoid mater. Common in elderly or after head injury.")
-        st.error("**3. Subarachnoid Hemorrhage (SAH)**\n\nBleeding in the space around the brain. Often from ruptured aneurysms.")
+        st.html("""
+        <div class="ich-card" style="background-color: #ffe6e6;">
+            <img src="https://i.postimg.cc/5NbvWsqZ/epi.png" />
+            <div>
+                <h4>1. Epidural Hemorrhage (EDH)</h4>
+                <p>Bleeding between the skull and dura mater.<br>Source: Arterial, Often caused by trauma.<br>Shape: Forms a lens-shaped clot on CT.
+                </p>
+            </div>
+        </div>
+    """)
+        st.html("""
+        <div class="ich-card" style="background-color: #fff0cc;">
+            <img src="https://i.postimg.cc/nLyjR2hS/sub.png" />
+            <div>
+                <h4>2. Subdural Hemorrhage (SDH)</h4>
+                <p>Bleeding between the dura and the arachnoid.<br>Source: Usually from torn veins.<br>Shape: Appears crescent-shaped and spreads widely.                
+                </p>
+            </div>
+        </div>
+    """)
+        st.html("""
+        <div class="ich-card" style="background-color: #e6f2ff;">
+            <img src="https://i.postimg.cc/rwdwB4bB/sba.png" />
+            <div>
+                <h4>3. Subarachnoid Hemorrhage (SAH)</h4>
+                <p>Bleeding between the arachnoid and the pia mater.<br>Source: Often due to a ruptured aneurysm.<br>Shape: Tracks along the sulci and fissures
+                </p>
+            </div>
+        </div>
+    """)
+        with col2:
+            st.html("""
+        <div class="ich-card" style="background-color: #e6ffe6;">
+            <img src="https://i.postimg.cc/3NJKn0mb/iph.png" />
+            <div>
+                <h4>4. Intraparenchymal Hemorrhage (IPH)</h4>
+                <p>Bleeding inside the brain tissue itself.<br>Source: Arterial or venous<br>Shape: Shows as a dense area in brain matter.
+                </p>
+            </div>
+        </div>
+    """)
+            st.html("""
+        <div class="ich-card" style="background-color: #f0e6ff;">
+            <img src="https://i.postimg.cc/BQ7v7ph5/ivh.png" />
+            <div>
+                <h4>5. Intraventricular Hemorrhage (IVH)</h4>
+                <p>Bleeding into the brain’s ventricles (fluid spaces).<br>Source: Arterial or venous<br>Shape: Conforms to ventricular shape
 
-    with col2:
-        st.info("**4. Intraparenchymal Hemorrhage (IPH)**\n\nBleeding inside the brain tissue. Often due to high blood pressure or stroke.")
-        st.success("**5. Intraventricular Hemorrhage (IVH)**\n\nBleeding into the brain's ventricular system. Common in premature infants and trauma.")
 
-    # Optional fun facts or callout
+                </p>
+            </div>
+        </div>
+    """)
+            st.html("""
+        <div class="ich-card" style="background-color: #f2f2f2;">
+            <img src="https://i.postimg.cc/fRg0XDnN/normal.png" />
+            <div>
+                <h4>6. Normal</h4>
+                <p>Normal and Healthy Brain.<br><br><br></p>
+            </div>
+        </div>
+    """)
+
     st.markdown("""---""")
     st.markdown("""
 ### 🧬 Clinical Insight:
 > Early detection of ICH on CT scans can **save lives**. This app uses a deep learning model to assist in identifying multiple types of ICH across CT slices.
 """)
-

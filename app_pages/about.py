@@ -26,6 +26,7 @@ def show():
     st.markdown("### 👨‍🔬 Meet the Research Team")
     
     st.html("""
+    
     <style>
         .author-container {
             display: flex;
@@ -52,9 +53,10 @@ def show():
             margin: 5px 0;
         }
         .author-links a {
-            margin: 0 10px;
-            font-size: 20px;
-        }
+        margin: 0 10px;
+        display: inline-block;
+    }
+    
     </style>
 
     <div class="author-container">
@@ -66,8 +68,8 @@ def show():
                 Medical Imaging • AI Research • Deep Learning Enthusiast
             </p>
             <div class="author-links">
-                <a href="mailto:moksasbeh@gmail.com" title="Email Ahmad">📧</a>
-                <a href="https://www.linkedin.com/in/mones-ksasbeh" target="_blank" title="LinkedIn">🔗</a>
+                <a href="mailto:amq4319@gmail.com" title="Email Ahmad">📧</a>
+                <a href="https://www.linkedin.com/in/ahmad-al-qaisi/" target="_blank" title="LinkedIn">🔗</a>
             </div>
         </div>
         <div class="author-card">
@@ -91,12 +93,21 @@ def show():
 
     with col1:
         st.link_button("🔗 View on GitHub", "https://github.com/AMQ4/Automated-Brain-Hemorrhage-Detection-in-CT-Scans")
-
-    # Disclaimer
+    with col2:
+        with open("ICH_Project_DOC.pdf", "rb") as file:
+            st.download_button(
+            label="📄 Download Documentation",
+            data=file,
+            file_name="ICH_Project_DOC.pdf",
+            mime="application/pdf"
+        )
+    
     st.markdown("---")
-    st.markdown("### ⚠️ Disclaimer")
-    st.warning(
-        "This application is for educational and research purposes only. "
-        "It is not intended for use in real clinical decision-making or diagnosis. "
-        "Always consult a licensed medical professional."
-    )
+    #Footer
+    st.html("""
+            <p style='text-align: center; font-size: 14px; color: gray; margin-top: 30px;'>
+            © 2025 Sarah K. Almashagbeh & Ahmad M. Alqaisi – All rights reserved.<br>
+            This project was developed as part of our graduation thesis at Al Albayt University.<br>
+            For educational and research purposes only.
+            </p>
+            """)
