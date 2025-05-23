@@ -20,10 +20,10 @@ class SpatialDropout(nn.Dropout2d):
 
 
 class SeqModel(nn.Module):
-    def __init__(self, embed_size, LSTM_UNITS=64, DO = 0.3):
+    def __init__(self, embed_size, LSTM_UNITS=64, DO=0.3):
         super(SeqModel, self).__init__()
 
-        self.embedding_dropout = SpatialDropout(0.0)
+        self.embedding_dropout = SpatialDropout(DO)
 
         self.lstm1 = nn.LSTM(embed_size, LSTM_UNITS, bidirectional=True, batch_first=True)
         self.lstm2 = nn.LSTM(LSTM_UNITS * 2, LSTM_UNITS, bidirectional=True, batch_first=True)
@@ -125,3 +125,27 @@ def make_diagnosis(ypred, imgs):
     yidx = ['{}_{}'.format(i,j) for i,j in zip(imgls, icdls)]
     subdf = pd.DataFrame({'ID' : yidx, 'Label': ypred.flatten()})
     return subdf
+
+
+def predict(loader, model):
+    valls = []
+    imgls = []
+    imgdf = loader.dataset.data.reset_index().set_index('embidx')[['Image']].copy()
+    for step, batch in enumerate(loader):
+        inputs = batch["emb"]
+        mask = batch['mask'].to(DEVICE, dtype=torch.int)
+
+        inputs = inputs.to(DEVICE, dtype=torch.float)
+        logits = model(inputs)
+
+        maskidx = mask.view(-1)==1
+
+        logits = logits.view(-1, len(LABEL_COLS))[maskidx]
+        valls.append(torch.sigmoid(logits).detach().cpu().numpy())
+
+        embidx = batch["embidx"].detach().cpu().numpy().astype(np.int32)
+        embidx = embidx.flatten()[embidx.flatten()>-1]
+        images = imgdf.loc[embidx].Image.tolist()
+        imgls += images
+
+    return np.concatenate(valls, 0), imgls
