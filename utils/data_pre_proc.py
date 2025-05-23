@@ -16,6 +16,39 @@ from albumentations.pytorch import ToTensorV2
 from albumentations import Compose, HorizontalFlip, Transpose, Normalize
 
 
+class PatientLevelEmbeddingDataset:
+    def __init__(self, df, mat, labels=LABEL_COLS):
+        self.data = df
+        self.mat = mat
+        self.labels = labels
+        self.patients = df.SliceID.unique()
+        self.data = self.data.set_index('SliceID')
+
+    def __len__(self):
+        return len(self.patients)
+
+    def __getitem__(self, idx):
+
+        patidx = self.patients[idx]
+        patdf = self.data.loc[patidx].sort_values('seq')
+        patemb = self.mat[patdf['embidx'].values]
+
+        patdeltalag  = np.zeros(patemb.shape)
+        patdeltalead = np.zeros(patemb.shape)
+        patdeltalag [1:] = patemb[1:]-patemb[:-1]
+        patdeltalead[:-1] = patemb[:-1]-patemb[1:]
+
+        patemb = np.concatenate((patemb, patdeltalag, patdeltalead), -1)
+
+        ids = torch.tensor(patdf['embidx'].values)
+
+        if self.labels:
+            labels = torch.tensor(patdf[LABEL_COLS].values)
+            return {'emb': patemb, 'embidx' : ids, 'labels': labels}
+        else:
+            return {'emb': patemb, 'embidx' : ids}
+
+
 class IntracranialDataset(Dataset):
     def __init__(self, df, path, labels, transform=None):
         self.path = path
