@@ -47,12 +47,20 @@ def show():
         if "WW" not in st.session_state:
             st.session_state.WW = 80
 
-        col1, col2 = st.columns([1, 1])
+        col1, col2,col3 = st.columns([1, 1])
         with col1:
-            if st.button("🔄 Reset to Brain Window"):
+            if st.button("Brain Window"):
                 st.session_state.WC = 40
                 st.session_state.WW = 80
-
+        with col2:
+            if st.button("Subdural Window"):
+                st.session_state.WC = 80
+                st.session_state.WW = 200
+        with col3:
+            if st.button("Bone Window"):
+                st.session_state.WC = 40
+                st.session_state.WW = 380  
+                      
         st.html('<div class="centered-controls">')
         col_wc, col_ww = st.columns([1, 1])
         with col_wc:
