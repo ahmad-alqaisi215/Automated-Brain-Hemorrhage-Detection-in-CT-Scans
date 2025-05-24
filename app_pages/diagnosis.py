@@ -81,41 +81,41 @@ def show():
 
         if not st.session_state.embeddings_extracted:
             loader = get_data_loader(ichdataset)
-            extract_emb = st.progress(0.0, text="Embedding Extraction...")
+            # extract_emb = st.progress(0.0, text="Embedding Extraction...")
 
-            total_models = 1
-            step = 0
+            # total_models = 1
+            # step = 0
 
-            for i in range(total_models):
-                model = get_feature_extractor(i)
+            # for i in range(total_models):
+            #     model = get_feature_extractor(i)
 
-                model.module.fc = Identity()
-                model.eval()
+            #     model.module.fc = Identity()
+            #     model.eval()
 
-                ls = []
+            #     ls = []
 
-                for j, batch in enumerate(loader):
-                    inputs = batch["image"].to(DEVICE, dtype=torch.float)
-                    out = model(inputs)
-                    ls.append(out.detach().cpu().numpy())
+            #     for j, batch in enumerate(loader):
+            #         inputs = batch["image"].to(DEVICE, dtype=torch.float)
+            #         out = model(inputs)
+            #         ls.append(out.detach().cpu().numpy())
 
-                    if j % total_models == 0:
-                        step += BATCH_SIZE
-                        progress = step / len(ichdataset)
+            #         if j % total_models == 0:
+            #             step += BATCH_SIZE
+            #             progress = step / len(ichdataset)
 
-                    extract_emb.progress(
-                        min(progress, 1.0),
-                        text=f'Embedding Extraction ({min(step, len(ichdataset))}/{len(ichdataset)})...'
-                    )
+            #         extract_emb.progress(
+            #             min(progress, 1.0),
+            #             text=f'Embedding Extraction ({min(step, len(ichdataset))}/{len(ichdataset)})...'
+            #         )
 
-                outemb = np.concatenate(ls, 0).astype(np.float32)
-                np.savez_compressed(os.path.join(UPLOAD_DIR, f'emb{i}'), outemb)
-                gc.collect()
+            #     outemb = np.concatenate(ls, 0).astype(np.float32)
+            #     np.savez_compressed(os.path.join(UPLOAD_DIR, f'emb{i}'), outemb)
+            #     gc.collect()
 
-            extract_emb.progress(
-                1.0, text=f'Embedding Extraction ({len(ichdataset)}/{len(ichdataset)})...')
+            # extract_emb.progress(
+            #     1.0, text=f'Embedding Extraction ({len(ichdataset)}/{len(ichdataset)})...')
 
-            st.success(f"{len(ichdataset)} CT Slice(s) Embeddings Extracted!")
+            # st.success(f"{len(ichdataset)} CT Slice(s) Embeddings Extracted!")
 
             model = get_feature_extractor()
             gradcam = GradCAM(model, target_layer=model.module.layer4[-1])
@@ -143,63 +143,63 @@ def show():
                     out_path = os.path.join(UPLOAD_DIR, f"{ids[j]}.jpg")
                     cv2.imwrite(out_path, cv2.cvtColor(overlay, cv2.COLOR_RGB2BGR))
 
-            dcms_df['SliceID'] = dcms_df[['PatientID', 'SeriesInstanceUID', 'StudyInstanceUID']].apply(
-                lambda x: '{}__{}__{}'.format(*x.tolist()), 1)
+            # dcms_df['SliceID'] = dcms_df[['PatientID', 'SeriesInstanceUID', 'StudyInstanceUID']].apply(
+            #     lambda x: '{}__{}__{}'.format(*x.tolist()), 1)
             
-            poscols = ['ImagePos{}'.format(i) for i in range(1, 4)]
-            dcms_df[poscols] = pd.DataFrame(dcms_df['ImagePositionPatient']
-                                    .apply(lambda x: list(map(float, x))).tolist())
+            # poscols = ['ImagePos{}'.format(i) for i in range(1, 4)]
+            # dcms_df[poscols] = pd.DataFrame(dcms_df['ImagePositionPatient']
+            #                         .apply(lambda x: list(map(float, x))).tolist())
             
-            dcms_df = dcms_df.sort_values(
-                ['SliceID']+poscols)[['PatientID', 'SliceID', 'SOPInstanceUID']+poscols].reset_index(drop=True)
-            dcms_df['seq'] = (dcms_df.groupby(['SliceID']).cumcount() + 1)
+            # dcms_df = dcms_df.sort_values(
+            #     ['SliceID']+poscols)[['PatientID', 'SliceID', 'SOPInstanceUID']+poscols].reset_index(drop=True)
+            # dcms_df['seq'] = (dcms_df.groupby(['SliceID']).cumcount() + 1)
 
-            keepcols = ['PatientID', 'SliceID', 'SOPInstanceUID', 'seq']
-            dcms_df = dcms_df[keepcols]
+            # keepcols = ['PatientID', 'SliceID', 'SOPInstanceUID', 'seq']
+            # dcms_df = dcms_df[keepcols]
 
-            dcms_df.columns = dcms_df.columns = ['PatientID', 'SliceID', 'Image', 'seq']
+            # dcms_df.columns = dcms_df.columns = ['PatientID', 'SliceID', 'Image', 'seq']
 
-            dcms_df_seq = loader.dataset.data
-            dcms_df_seq['Image'] = dcms_df_seq['SOPInstanceUID']
-            dcms_df_seq['embidx'] = range(dcms_df_seq.shape[0])
+            # dcms_df_seq = loader.dataset.data
+            # dcms_df_seq['Image'] = dcms_df_seq['SOPInstanceUID']
+            # dcms_df_seq['embidx'] = range(dcms_df_seq.shape[0])
 
-            dcms_df_seq = dcms_df_seq.merge(dcms_df, on='Image')
-            lstmypredls = []
+            # dcms_df_seq = dcms_df_seq.merge(dcms_df, on='Image')
+            # lstmypredls = []
 
-            for i in range(total_models):
-                dcms_df_emb = [loademb(i)]
-                dcms_df_emb = sum(dcms_df_emb)/len(dcms_df_emb)
+            # for i in range(total_models):
+            #     dcms_df_emb = [loademb(i)]
+            #     dcms_df_emb = sum(dcms_df_emb)/len(dcms_df_emb)
 
-                dcm_seq_dataset = PatientLevelEmbeddingDataset(dcms_df_seq, dcms_df_emb, labels=False)
-                dcm_seq_loader = DataLoader(dcm_seq_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=os.cpu_count(), collate_fn=collatefn)
+            #     dcm_seq_dataset = PatientLevelEmbeddingDataset(dcms_df_seq, dcms_df_emb, labels=False)
+            #     dcm_seq_loader = DataLoader(dcm_seq_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=os.cpu_count(), collate_fn=collatefn)
 
-                model = SeqModel(embed_size=LSTM_UNITS*3, LSTM_UNITS=LSTM_UNITS, DO=0.0)
-                model.to(DEVICE)
+            #     model = SeqModel(embed_size=LSTM_UNITS*3, LSTM_UNITS=LSTM_UNITS, DO=0.0)
+            #     model.to(DEVICE)
 
-                # model = torch.nn.DataParallel(model, device_ids=list(
-                #     range(N_GPU)[::-1]), output_device=DEVICE)
+            #     # model = torch.nn.DataParallel(model, device_ids=list(
+            #     #     range(N_GPU)[::-1]), output_device=DEVICE)
                 
-                for param in model.parameters():
-                    param.requires_grad = False
+            #     for param in model.parameters():
+            #         param.requires_grad = False
 
-                input_model_file = os.path.join(
-                    MODELS_DIR, f"lstm_gepoch{i}_lstmepoch11_fold6.bin")
-                model.load_state_dict(torch.load(input_model_file))
-                model.to(DEVICE)
-                model.eval()
+            #     input_model_file = os.path.join(
+            #         MODELS_DIR, f"lstm_gepoch{i}_lstmepoch11_fold6.bin")
+            #     model.load_state_dict(torch.load(input_model_file))
+            #     model.to(DEVICE)
+            #     model.eval()
 
-                ypredls = []
+            #     ypredls = []
 
-                ypred, imgdcm = predict(dcm_seq_loader, model)
-                ypredls.append(ypred)
+            #     ypred, imgdcm = predict(dcm_seq_loader, model)
+            #     ypredls.append(ypred)
 
-                ypred = sum(ypredls[-N_BAGS:])/len(ypredls[-N_BAGS:])
-                yout = make_diagnosis(ypred, imgdcm)
+            #     ypred = sum(ypredls[-N_BAGS:])/len(ypredls[-N_BAGS:])
+            #     yout = make_diagnosis(ypred, imgdcm)
                 
-                lstmypredls.append(yout.set_index('ID'))
+            #     lstmypredls.append(yout.set_index('ID'))
 
-            final_diagnosis = bagged_diagnosis(lstmypredls)
-            final_diagnosis.to_csv(os.path.join(UPLOAD_DIR, 'final_diagnosis.csv'), index=False)
+            # final_diagnosis = bagged_diagnosis(lstmypredls)
+            # final_diagnosis.to_csv(os.path.join(UPLOAD_DIR, 'final_diagnosis.csv'), index=False)
             # st.subheader("📋 Final Diagnosis Table")
             # st.dataframe(final_diagnosis)
 
