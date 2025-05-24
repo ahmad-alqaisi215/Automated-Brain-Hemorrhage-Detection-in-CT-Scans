@@ -249,7 +249,7 @@ def show():
             """, unsafe_allow_html=True)
 
         with col2:
-            st.markdown("**Potential Hemorrhage (AI Interpretation for Clinical Review)**")
+            st.markdown("**Potential Hemorrhage — AI Interpretation for Clinical Review**")
             st.markdown(f"""
             <div style="text-align:center;">
                 <img src="data:image/png;base64,{grad_base64}" width="400" style="border-radius: 8px;" />
