@@ -14,11 +14,11 @@ def render_sidebar():
         alt="3D brain model"
         auto-rotate
         camera-controls
-        style="width: 100%; height: 200px; background: transparent; border-radius: 10px;"
+        style="width: 100px; height: 100px; background: transparent; border-radius: 10px;"
         exposure="1"
         shadow-intensity="1">
     </model-viewer>
-""", height=200)
+""", height=100)
         
         st.markdown("<div class='navbar'>", unsafe_allow_html=True)
         st.markdown("# Navigation")
