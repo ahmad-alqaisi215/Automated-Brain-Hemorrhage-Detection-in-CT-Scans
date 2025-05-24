@@ -61,20 +61,20 @@ def show():
 
     <div class="author-container">
         <div class="author-card">
-            <img src="https://i.postimg.cc/9fXnmfRM/ahmad.png" class="author-img" alt="Ahmad M">
-            <p class="author-name" style="font-weight: bold;">Ahmad M Alqaisi</p>
+            <img src="https://i.postimg.cc/8zG4f3gZ/me.png" class="author-img" alt="Ahmad M">
+            <p class="author-name" style="font-weight: bold;">Ahmad M. Alqaisi</p>
             <p style="font-size: 14px; color: #555; margin-top: 20px; margin-bottom: 5px; line-height: 1.2;">
                 Data Science and AI Graduate from Al Albayt University<br>
                 Medical Imaging • AI Research • Deep Learning Enthusiast
             </p>
             <div class="author-links">
-                <a href="mailto:amq4319@gmail.com" title="Email Ahmad">📧</a>
+                <a href="mailto:ahmad.alqaisi215@gmail.com" title="Email Ahmad">📧</a>
                 <a href="https://www.linkedin.com/in/ahmad-al-qaisi/" target="_blank" title="LinkedIn">🔗</a>
             </div>
         </div>
         <div class="author-card">
             <img src="https://i.postimg.cc/CK12pb7s/IMG-0068-1.jpg" class="author-img" alt="Sarah Al">
-            <p class="author-name" style="font-weight: bold;">Sarah K Almashagbeh</p>
+            <p class="author-name" style="font-weight: bold;">Sarah K. Almashagbeh</p>
             <p style="font-size: 14px; color: #555; margin-top: 20px; margin-bottom: 5px; line-height: 1.2;">
                 Data Science and AI Graduate from Al Albayt University<br>
                 Medical Imaging • AI Research • Deep Learning Enthusiast
