@@ -9,7 +9,7 @@ import ast
 
 from utils.config import UPLOAD_DIR, IMG_DIR, DEVICE, BATCH_SIZE, LSTM_UNITS, SEQ_MODEL_PTH, N_CLASSES, N_GPU, MODELS_DIR, N_BAGS
 from utils.data_pre_proc import (generate_df, convert_dicom_to_jpg, IntracranialDataset, get_img_transformer, 
-                                 loademb, PatientLevelEmbeddingDataset, collatefn, bagged_diagnosis)
+                                 loademb, PatientLevelEmbeddingDataset, collatefn, bagged_diagnosis, convert_img_to_base64)
 from utils.model_builder import get_feature_extractor, get_data_loader, GradCAM, SeqModel, predict, make_diagnosis, Identity
 from torch.utils.data import DataLoader
 
@@ -199,9 +199,9 @@ def show():
                 lstmypredls.append(yout.set_index('ID'))
 
             final_diagnosis = bagged_diagnosis(lstmypredls)
-
-            st.subheader("📋 Final Diagnosis Table")
-            st.dataframe(final_diagnosis)
+            final_diagnosis.to_csv(os.path.join(UPLOAD_DIR, 'final_diagnosis.csv'), index=False)
+            # st.subheader("📋 Final Diagnosis Table")
+            # st.dataframe(final_diagnosis)
 
             st.session_state.embeddings_extracted = True
 
@@ -227,21 +227,34 @@ def show():
             dcm_meta = st.session_state.dcm_meta
 
         # ----------------- Display ----------------- #
-        st.markdown("### 🧠 Slice Viewer (Grayscale vs Grad-CAM)")
-
-        # Use key-based state handling for slider
-        idx = st.slider("Navigate Slices", 0, len(dcm_meta) - 1, key="slice_idx")
+        st.markdown("### 🧠 CT Scan Slice Viewer")
 
         # Load images using OpenCV
+        idx = st.session_state.get("slice_idx", 0)  # safe default if not initialized
+
         orig_img = cv2.imread(os.path.join(IMG_DIR, dcm_meta.loc[idx, 'SOPInstanceUID']) + '.jpg', cv2.IMREAD_GRAYSCALE)
         grad_img = cv2.imread(os.path.join(UPLOAD_DIR, dcm_meta.loc[idx, 'SOPInstanceUID']) + '.jpg', cv2.IMREAD_COLOR)
 
-        col1, col2 = st.columns(2)
+        # Convert grayscale
+        gray_base64 = convert_img_to_base64(orig_img)
+        grad_base64 = convert_img_to_base64(cv2.cvtColor(grad_img, cv2.COLOR_BGR2RGB))
 
+        col1, col2 = st.columns(2)
         with col1:
-            st.markdown("**Original CT (Grayscale)**")
-            st.image(orig_img, channels="GRAY", use_column_width=True, clamp=True)
+            st.markdown("**Original CT Image**")
+            st.markdown(f"""
+            <div style="text-align:center;">
+                <img src="data:image/png;base64,{gray_base64}" width="400" style="border-radius: 8px;" />
+            </div>
+            """, unsafe_allow_html=True)
 
         with col2:
-            st.markdown("**Grad-CAM Overlay**")
-            st.image(cv2.cvtColor(grad_img, cv2.COLOR_BGR2RGB), use_column_width=True)
+            st.markdown("**Potential Hemorrhage (AI Interpretation for Clinical Review)**")
+            st.markdown(f"""
+            <div style="text-align:center;">
+                <img src="data:image/png;base64,{grad_base64}" width="400" style="border-radius: 8px;" />
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.slider("Navigate Slices", 0, len(dcm_meta) - 1, key="slice_idx")
+
