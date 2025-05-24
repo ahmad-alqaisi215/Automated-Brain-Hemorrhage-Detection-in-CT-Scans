@@ -73,7 +73,7 @@ def show():
             </div>
         </div>
         <div class="author-card">
-            <img src="https://i.postimg.cc/CK12pb7s/IMG-0068-1.jpg" class="author-img" alt="Sarah Al">
+            <img src="https://i.postimg.cc/J0rRbMPf/IMG-0068-1.jpg" class="author-img" alt="Sarah Al">
             <p class="author-name" style="font-weight: bold;">Sarah K. Almashagbeh</p>
             <p style="font-size: 14px; color: #555; margin-top: 20px; margin-bottom: 5px; line-height: 1.2;">
                 Data Science and AI Graduate from Al Albayt University<br>
