@@ -33,62 +33,24 @@ def show():
         </style>
     """)
     #glb_url = 'https://raw.githubusercontent.com/AMQ4/Automated-Brain-Hemorrhage-Detection-in-CT-Scans/main/human-brain.glb'
-    glb_url = "https://raw.githubusercontent.com/AMQ4/Automated-Brain-Hemorrhage-Detection-in-CT-Scans/main/plastic_skull_with_brain_pathologies_model.glb"
+    #glb_url = "https://raw.githubusercontent.com/AMQ4/Automated-Brain-Hemorrhage-Detection-in-CT-Scans/main/plastic_skull_with_brain_pathologies_model.glb"
+    glb_url='https://raw.githubusercontent.com/AMQ4/Automated-Brain-Hemorrhage-Detection-in-CT-Scans/main/components/brain_anatomy.glb'
 
-   
-
-    components.html("""
+    components.html(f"""
 <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 
 <model-viewer 
   id="brainModel"
-  src="https://raw.githubusercontent.com/AMQ4/Automated-Brain-Hemorrhage-Detection-in-CT-Scans/main/plastic_skull_with_brain_pathologies_model.glb"
+  src="{glb_url}"
   alt="3D brain model"
   auto-rotate
   camera-controls
-  style="width: 100%; height: 400px; background-color: white; border-radius: 10px;"
+  style="width: 100%; height: 700px; background-color: white; border-radius: 10px;"
   exposure="1"
   shadow-intensity="1"
   environment-image="neutral"
   field-of-view="35deg"
-  camera-target="0m 0m 0m">
-
-  <!-- Clickable Hotspot -->
-  <button slot="hotspot-1"
-    id="hotspot1"
-    data-position="0.1m 0.15m 0.05m"
-    data-normal="0m 0m 1m"
-    style="width: 16px; height: 16px; background: red; border: none; border-radius: 50%; cursor: pointer;">
-  </button>
-</model-viewer>
-
-<!-- Info Card -->
-<div id="infoCard" style="
-  display: none;
-  margin-top: 10px;
-  padding: 12px;
-  background-color: #f9f9f9;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-family: sans-serif;">
-  <strong>Frontal Lobe</strong><br>
-  Responsible for decision making, personality, and movement.
-</div>
-
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-  const button = document.getElementById("hotspot1");
-  const model = document.getElementById("brainModel");
-  const card = document.getElementById("infoCard");
-
-  button.addEventListener("click", () => {
-    model.cameraTarget = '0.1m 0.15m 0.05m';
-    model.fieldOfView = '15deg';
-    card.style.display = 'block';
-  });
-});
-</script>
-""", height=520)
+  camera-target="0m 0m 0m">""", height=400)
 
     
     # Section: What is ICH?
