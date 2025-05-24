@@ -106,6 +106,7 @@ def show():
 
         for i, batch in enumerate(loader):
             inputs = batch["image"].to(DEVICE)
+            ids = batch["id"][0]
 
             for j in range(inputs.shape[0]):
                 input_tensor = inputs[j].unsqueeze(0)
@@ -123,7 +124,7 @@ def show():
 
                 overlay = cv2.addWeighted(img, 0.5, heatmap, 0.5, 0)
 
-                out_path = os.path.join(UPLOAD_DIR, f"gradcam_{i}_{j}.png")
+                out_path = os.path.join(UPLOAD_DIR, f"{ids[j]}.jpg")
                 cv2.imwrite(out_path, cv2.cvtColor(overlay, cv2.COLOR_RGB2BGR))
 
         dcms_df['SliceID'] = dcms_df[['PatientID', 'SeriesInstanceUID', 'StudyInstanceUID']].apply(
@@ -178,11 +179,11 @@ def show():
 
             ypred = sum(ypredls[-N_BAGS:])/len(ypredls[-N_BAGS:])
             yout = make_diagnosis(ypred, imgdcm)
-
+            
             lstmypredls.append(yout.set_index('ID'))
 
         final_diagnosis = bagged_diagnosis(lstmypredls)
-        
+
         st.subheader("📋 Final Diagnosis Table")
         st.dataframe(final_diagnosis)
 
