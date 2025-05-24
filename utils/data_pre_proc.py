@@ -1,5 +1,6 @@
 import shutil
 import os
+import ast
 import pydicom
 import pandas as pd
 import cv2
@@ -86,7 +87,14 @@ class IntracranialDataset(Dataset):
                 self.data.loc[idx, LABEL_COLS])
             return {'image': img, 'labels': labels}
         else:
-            return {'image': img}
+            z_str = self.data.loc[idx, 'ImagePositionPatient']
+            z_val = ast.literal_eval(z_str)[-1]
+
+            return {
+                'image': img, 
+                'id': self.data.loc[idx, ['SOPInstanceUID']].to_list(), 
+                'z': z_val
+            }
 
 
 def remove_dir_if_exists(path):
@@ -278,10 +286,12 @@ def long_to_wide(df):
 
 
 def bagged_diagnosis(seqpredsls, wide_format=True):
-    ylstmpred = sum(seqpredsls)/len(seqpredsls)
+    ylstmpred = sum(seqpredsls) / len(seqpredsls)
     ylstmpred = ylstmpred.clip(0.00001, 0.99999)
+
+    # ylstmpred["Label"] = (torch.sigmoid(torch.tensor(ylstmpred["Label"].values)).numpy() > 0.5).astype(int)
 
     if wide_format:
         return long_to_wide(ylstmpred.reset_index())
-    
+
     return ylstmpred.reset_index()
