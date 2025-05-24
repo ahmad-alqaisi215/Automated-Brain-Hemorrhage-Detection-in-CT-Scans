@@ -34,8 +34,10 @@ def show():
     """)
     #glb_url = 'https://raw.githubusercontent.com/AMQ4/Automated-Brain-Hemorrhage-Detection-in-CT-Scans/main/human-brain.glb'
     #glb_url = "https://raw.githubusercontent.com/AMQ4/Automated-Brain-Hemorrhage-Detection-in-CT-Scans/main/plastic_skull_with_brain_pathologies_model.glb"
-    glb_url='https://raw.githubusercontent.com/AMQ4/Automated-Brain-Hemorrhage-Detection-in-CT-Scans/main/components/brain_anatomy.glb'
-
+    #glb_url='https://raw.githubusercontent.com/AMQ4/Automated-Brain-Hemorrhage-Detection-in-CT-Scans/main/components/brain_anatomy.glb'
+    #glb_url='https://raw.githubusercontent.com/AMQ4/Automated-Brain-Hemorrhage-Detection-in-CT-Scans/main/brain_anatomy_2.glb'
+    glb_url= 'https://raw.githubusercontent.com/AMQ4/Automated-Brain-Hemorrhage-Detection-in-CT-Scans/main/brain_anatomy_final.glb'
+    
     components.html(f"""
 <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 
