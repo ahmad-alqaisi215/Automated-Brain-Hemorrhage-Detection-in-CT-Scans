@@ -1,0 +1,8 @@
+streamlit
+torch
+pydicom
+albumentations
+numpy
+pandas
+opencv-python
+Pillow
